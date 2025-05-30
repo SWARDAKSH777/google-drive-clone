@@ -1,11 +1,12 @@
 import { Client } from "basic-ftp";
+import { env } from "@/env.mjs";
 
 export const ftpConfig = {
-  host: eu-central-1.sftpcloud.io,
-  user: e7ab2be170f9410693ca099a0adfb13a,
-  password: hjPOUx0IiwOGAnz7rSfxxNdJx2C5CrIE,
+  host: env.FTP_HOST,
+  user: env.FTP_USER,
+  password: env.FTP_PASSWORD,
   secure: true,
-  baseUrl: "https://your-ftp-public-url" // Public URL where files are accessible
+  baseUrl: env.FTP_BASE_URL
 };
 
 export class FTPService {
