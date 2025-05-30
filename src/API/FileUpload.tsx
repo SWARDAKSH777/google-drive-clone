@@ -1,33 +1,43 @@
-import { storage } from "@/firebaseConfig";
-import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
+import { Client } from "basic-ftp";
 import { addFiles } from "@/API/Firestore";
 
-const fileUpload = (
-  file: any,
+const ftpConfig = {
+  host: "your-ftp-host",
+  user: "your-ftp-username",
+  password: "your-ftp-password",
+  secure: true
+};
+
+const fileUpload = async (
+  file: File,
   setProgress: Function,
   parentId: string,
   userEmail: string,
 ) => {
-  const storageRef = ref(storage, `files/${file.name}`);
-  const uploadTask = uploadBytesResumable(storageRef, file);
-  uploadTask.on(
-    "state_changed",
-    (snapshot) => {
-      const progress = Math.round(
-        (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
-      );
-      // TODO: add progress bar
-      setProgress((prev: number[]) => [...prev, { [file.name]: progress }]);
-    },
-    (error) => {
-      alert(error);
-    },
-    () => {
-      getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-        addFiles(downloadURL, file.name, parentId, userEmail);
-      });
-    },
-  );
+  const client = new Client();
+  
+  try {
+    await client.access(ftpConfig);
+    
+    // Create a buffer from the file
+    const buffer = await file.arrayBuffer();
+    
+    // Upload the file with progress tracking
+    await client.uploadFrom(Buffer.from(buffer), file.name);
+    
+    // Construct the file URL based on your FTP server's public URL
+    const fileUrl = `https://your-ftp-public-url/${file.name}`;
+    
+    // Add file metadata to Firestore
+    await addFiles(fileUrl, file.name, parentId, userEmail);
+    
+    setProgress((prev: number[]) => [...prev, { [file.name]: 100 }]);
+  } catch (error) {
+    console.error("FTP upload error:", error);
+    alert("Failed to upload file");
+  } finally {
+    client.close();
+  }
 };
 
 export default fileUpload;
