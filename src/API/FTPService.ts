@@ -1,56 +1,34 @@
-import { Client } from "basic-ftp";
-import { env } from "@/env.mjs";
+import { Client } from 'ftp-ts';
 
-export const ftpConfig = {
-  host: env.FTP_HOST,
-  user: env.FTP_USER,
-  password: env.FTP_PASSWORD,
-  secure: true,
-  baseUrl: env.FTP_BASE_URL
+const ftpConfig = {
+  host: process.env.NEXT_PUBLIC_FTP_HOST || '',
+  port: parseInt(process.env.NEXT_PUBLIC_FTP_PORT || '21'),
+  user: process.env.NEXT_PUBLIC_FTP_USER || '',
+  password: process.env.NEXT_PUBLIC_FTP_PASSWORD || '',
 };
 
-export class FTPService {
-  private static client: Client;
+export const ftpClient = new Client(ftpConfig);
 
-  private static async getClient() {
-    if (!this.client) {
-      this.client = new Client();
-      await this.client.access(ftpConfig);
-    }
-    return this.client;
-  }
-
-  static async uploadFile(file: File): Promise<string> {
-    const client = await this.getClient();
+export const uploadFile = async (file: File, path: string): Promise<string> => {
+  try {
+    await ftpClient.connect();
     const buffer = await file.arrayBuffer();
-    
-    try {
-      await client.uploadFrom(Buffer.from(buffer), file.name);
-      return `${ftpConfig.baseUrl}/${file.name}`;
-    } catch (error) {
-      console.error("FTP upload error:", error);
-      throw error;
-    }
+    await ftpClient.put(Buffer.from(buffer), `${path}/${file.name}`);
+    await ftpClient.end();
+    return `${process.env.NEXT_PUBLIC_FTP_BASE_URL}/${path}/${file.name}`;
+  } catch (error) {
+    console.error('FTP upload error:', error);
+    throw error;
   }
+};
 
-  static async deleteFile(fileName: string): Promise<void> {
-    const client = await this.getClient();
-    try {
-      await client.remove(fileName);
-    } catch (error) {
-      console.error("FTP delete error:", error);
-      throw error;
-    }
+export const deleteFile = async (path: string): Promise<void> => {
+  try {
+    await ftpClient.connect();
+    await ftpClient.delete(path);
+    await ftpClient.end();
+  } catch (error) {
+    console.error('FTP delete error:', error);
+    throw error;
   }
-
-  static async listFiles(): Promise<string[]> {
-    const client = await this.getClient();
-    try {
-      const list = await client.list();
-      return list.map(item => item.name);
-    } catch (error) {
-      console.error("FTP list error:", error);
-      throw error;
-    }
-  }
-}
+};
