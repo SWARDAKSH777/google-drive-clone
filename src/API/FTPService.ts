@@ -1,9 +1,9 @@
 import { Client } from "basic-ftp";
 
 export const ftpConfig = {
-  host: "your-ftp-host",
-  user: "your-ftp-username",
-  password: "your-ftp-password",
+  host: eu-central-1.sftpcloud.io,
+  user: e7ab2be170f9410693ca099a0adfb13a,
+  password: hjPOUx0IiwOGAnz7rSfxxNdJx2C5CrIE,
   secure: true,
   baseUrl: "https://your-ftp-public-url" // Public URL where files are accessible
 };
